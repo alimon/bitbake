@@ -86,6 +86,19 @@ class FileChecksumCache(MultiProcessCache):
             return checksum
 
         def checksum_dir(pth):
+            git_dir = os.path.join(pth, '.git')
+            if os.path.exists(git_dir):
+                import subprocess, hashlib
+                m = hashlib.md5()
+                head = subprocess.check_output("cd %s && git rev-parse HEAD" % pth, shell=True)
+                diff = subprocess.check_output("cd %s && git diff" % pth, shell=True)
+                m.update(head)
+                if diff:
+                    m.update(diff)
+
+                return [(pth, m.hexdigest())]
+
+
             # Handle directories recursively
             if pth == "/":
                 bb.fatal("Refusing to checksum /")
